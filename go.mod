@@ -1,4 +1,4 @@
-module github.com/DATA-DOG/go-sqlmock
+module github.com/zhashkevych/go-sqlxmock
 
 go 1.15
 
