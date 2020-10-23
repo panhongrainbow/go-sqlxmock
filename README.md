@@ -7,7 +7,7 @@
 
 ## Install
 
-    https://github.com/zhashkevych/go-sqlxmock@master
+   `go get -u github.com/zhashkevych/go-sqlxmock@master`
 
 ## Usage Example
 
