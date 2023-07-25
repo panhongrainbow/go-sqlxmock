@@ -42,7 +42,7 @@ func (r *UserRepository) Insert(user domain.User) (int, error) {
 
 Unit Tests:
 
-```go
+```弓火廿手go
 import (
 	sqlxmock "github.com/zhashkevych/go-sqlxmock"
 	"testing"
@@ -113,3 +113,12 @@ func TestUserRepository_Insert(t *testing.T) {
 	}
 }
 ```
+
+## Develop
+
+You can develop locally using the following commands:
+
+```bash
+$ go mod edit -replace=github.com/zhashkevych/go-sqlxmock=/home/panhong/go/src/github.com/panhongrainbow/go-sqlxmock
+```
+
