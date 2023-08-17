@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -13,8 +14,8 @@ import (
 
 var mockConfigLocation string
 
-// SetMockLocation sets mockConfigLocation and returns the directory path of the caller's location.
-func SetMockLocation() {
+// SetMockLocationByTriggerMain sets mockConfigLocation and gets the directory path of the caller's location.
+func SetMockLocationByTriggerMain() {
 	if mockConfigLocation == "" {
 		_, file, _, _ := runtime.Caller(1)
 		mockConfigLocation = filepath.Dir(file)
@@ -22,7 +23,13 @@ func SetMockLocation() {
 	return
 }
 
-// SetMockLocation returns mockConfigLocation.
+// SetMockLocationByManual sets mockConfigLocation by manual.
+func SetMockLocationByManual(path string) {
+	mockConfigLocation = path
+	return
+}
+
+// GetMockLocation returns mockConfigLocation.
 func GetMockLocation() (path string) {
 	return mockConfigLocation
 }
@@ -78,7 +85,9 @@ func LoadMockConfig(sqlMock Sqlmock, jsonFile string) (error error) {
 			for _, row := range returnRows.Rows {
 				response = response.AddRow(convertNumbers(row)...)
 			}
-			sqlMock.ExpectQuery(mock.QueryString).WithArgs(convertNumbers(mock.QueryArgs)...).WillReturnRows(response)
+			sqlMock.ExpectQuery(
+				regexp.QuoteMeta(mock.QueryString), //
+			).WithArgs(convertNumbers(mock.QueryArgs)...).WillReturnRows(response)
 		}
 	}
 
