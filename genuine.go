@@ -160,6 +160,25 @@ func mapCreateFieldValue(t reflect.Type, value interface{}) (corrected string) {
 
 // >>>>> >>>>> >>>>> Shared Functions Functions
 
+// MakeSelectTableSQLStr generates SQL INSERT statements for a given table name and model.
+func MakeSelectTableSQLStr(tableName string, model interface{}, convertCase uint8) (sqlStr string) {
+	t := reflect.TypeOf(model)
+
+	var columns []string
+
+	for i := 0; i < t.Elem().NumField(); i++ {
+		field := t.Elem().Field(i)
+		columns = append(columns,
+			ConvertStringFormats(field.Name, convertCase),
+		)
+	}
+
+	columnsStr := strings.Join(columns, ", ")
+
+	sqlStr = fmt.Sprintf("SELECT %s FROM %s;", columnsStr, tableName)
+	return
+}
+
 // Defines text case conversion constants.
 const (
 	Case_Upper     uint8 = iota + 1 // Represents converting text to uppercase.
