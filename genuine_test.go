@@ -2,10 +2,11 @@ package sqlmock
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"log"
+	"github.com/zhashkevych/go-sqlxmock/testdata"
 	"testing"
 	"time"
 )
@@ -128,59 +129,165 @@ func Test_Check_MakeCreateTableSQLStr(t *testing.T) {
 	}
 }
 
+// Test_Check_MakeInsertTableSQLStr showcases detailed cases of SQL statement generation for movie data.
 func Test_Check_MakeInsertTableSQLStr(t *testing.T) {
-	type KDEtheme struct {
-		ID        int `insert:"skip"`
-		Name      string
-		Theme     string
-		Rating    float64
-		Quantity  int
-		CreatedAt time.Time
+	type Movie struct {
+		ID          int       `insert:"skip"` // ID field will be skipped during insertion.
+		Title       string    // Title of the movie.
+		Genre       string    // Genre of the movie.
+		Rating      float64   // Rating of the movie.
+		Duration    int       // Duration of the movie in minutes.
+		ReleaseDate time.Time // Release date of the movie.
 	}
 
-	model := []KDEtheme{
-		{1, "A", "B", 4.5, 10, time.Now()},
-		{2, "C", "D", 3.2, 5, time.Now()},
-		{3, "E", "F", 2.8, 8, time.Now()},
-		{4, "G", "H", 4.0, 12, time.Now()},
-		{5, "I", "J", 2.5, 6, time.Now()},
-		{6, "K", "L", 3.7, 7, time.Now()},
-		{7, "M", "N", 1.9, 15, time.Now()},
-		{8, "O", "P", 4.8, 9, time.Now()},
-		{9, "Q", "R", 3.6, 11, time.Now()},
-		{10, "S", "T", 2.1, 3, time.Now()},
+	// Create a sample slice of Movie instances.
+	model := []Movie{
+		{1, "Inception", "Science Fiction", 8.8, 148, time.Now()},
+		{2, "The Shawshank Redemption", "Drama", 9.3, 142, time.Now()},
+		{3, "Pulp Fiction", "Crime", 8.9, 154, time.Now()},
+		{4, "The Dark Knight", "Action", 9.0, 152, time.Now()},
+		{5, "Forrest Gump", "Drama", 8.8, 142, time.Now()},
 	}
 
-	expectedSQL := "INSERT INTO kde_theme (Name, Theme, Rating, Quantity, CreatedAt) VALUES " +
-		"('A', 'B', 4.500, 10, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('C', 'D', 3.200, 5, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('E', 'F', 2.800, 8, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('G', 'H', 4.000, 12, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('I', 'J', 2.500, 6, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('K', 'L', 3.700, 7, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('M', 'N', 1.900, 15, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('O', 'P', 4.800, 9, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('Q', 'R', 3.600, 11, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
-		"('S', 'T', 2.100, 3, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "');"
+	// Construct the expected SQL statement.
+	expectedSQL := "INSERT INTO movies (Title, Genre, Rating, Duration, ReleaseDate) VALUES " +
+		"('Inception', 'Science Fiction', 8.800, 148, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
+		"('The Shawshank Redemption', 'Drama', 9.300, 142, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
+		"('Pulp Fiction', 'Crime', 8.900, 154, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
+		"('The Dark Knight', 'Action', 9.000, 152, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "'), " +
+		"('Forrest Gump', 'Drama', 8.800, 142, '" + time.Now().UTC().Format("2006-01-02 15:04:05") + "');"
 
-	sqlStr := MakeInsertTableSQLStr("kde_theme", model, Case_No_Change)
+	// Generate the SQL statement using the MakeInsertTableSQLStr function..
+	sqlStr := MakeInsertTableSQLStr("movies", model, Case_No_Change)
+	// Assert that the generated SQL matches the expected SQL.
 	assert.Equal(t, expectedSQL, sqlStr)
 }
 
+// Test_Check_MakeSelectTableSQLStr validates SQL statement generation for an empty struct slice representing table schema.
 func Test_Check_MakeSelectTableSQLStr(t *testing.T) {
+	// Define an empty struct slice to represent the table schema.
 	var m []struct {
 		ID   int
 		Name string
 		Age  int
 	}
 
+	// Specify the table name and the expected SQL statement.
 	tableName := "sample"
 	expectedSQL := "SELECT ID, Name, Age FROM sample;"
 
+	// Generate the SQL statement using MakeSelectTableSQLStr function.
 	sqlStr := MakeSelectTableSQLStr(tableName, m, Case_No_Change)
 
-	if sqlStr != expectedSQL {
-		t.Errorf("Expected SQL: %s, but got: %s", expectedSQL, sqlStr)
+	// Compare the generated SQL with the expected SQL.
+	assert.Equal(t, expectedSQL, sqlStr, fmt.Sprintf("Expected SQL: %s, but got: %s", expectedSQL, sqlStr))
+}
+
+// Test_Check_FetchResultsFromRows validates FetchResultsFromRows function with mock database results and assertions for correctness.
+func Test_Check_FetchResultsFromRows(t *testing.T) {
+	// Create a mock database connection and obtain a mock database handle
+	db, mock, err := New()
+	assert.NoError(t, err, "Failed to create mock database connection")
+	defer db.Close()
+
+	// Define the columns and rows you want to use for testing
+	columns := []string{"col1", "col2"}
+	mock.ExpectQuery("SELECT").WillReturnRows(
+		mock.NewRows(columns).AddRow("value1-1", "value1-2").AddRow("value2-1", "value2-2"),
+	)
+
+	// Call the function to be tested
+	rows, err := db.Query("SELECT ...")
+	assert.NoError(t, err, "Failed to execute query")
+	defer rows.Close()
+
+	results, err := FetchResultsFromRows(rows)
+
+	// Assertions
+	assert.NoError(t, err, "Unexpected error")
+	assert.Equal(t, [][]string{{"value1-1", "value1-2"}, {"value2-1", "value2-2"}}, results, "Mismatch in results")
+
+	// Make sure all expectations were met
+	assert.NoError(t, mock.ExpectationsWereMet(), "Not all expectations were met")
+}
+
+// Test_Check_CompareResults validates comparison of results with detailed scenarios, ensuring correctness of differences.
+func Test_Check_CompareResults(t *testing.T) {
+	// Define a test table with different scenarios for result comparisons.
+	tests := []struct {
+		name               string
+		results1           [][]string
+		results2           [][]string
+		expectedSame       bool
+		expectedCondition  uint8
+		expectedDifference []DiffPlace
+	}{
+		{
+			name: "EqualResults",
+			results1: [][]string{
+				{"a", "b"},
+				{"c", "d"},
+			},
+			results2: [][]string{
+				{"a", "b"},
+				{"c", "d"},
+			},
+			expectedSame:       true,
+			expectedCondition:  Condition_The_Same,
+			expectedDifference: nil,
+		},
+		{
+			name: "DifferentResults",
+			results1: [][]string{
+				{"a", "b"},
+				{"c", "d"},
+			},
+			results2: [][]string{
+				{"a", "b"},
+				{"e", "d"},
+			},
+			expectedSame:      false,
+			expectedCondition: Condition_Diff_In_Value,
+			expectedDifference: []DiffPlace{
+				{1, 0, "c", "e"},
+			},
+		},
+		{
+			name: "ThreeDifferentElements",
+			results1: [][]string{
+				{"a", "b", "c", "d", "e"},
+				{"f", "g", "h", "i", "j"},
+				{"k", "l", "m", "n", "o"},
+				{"p", "q", "r", "s", "t"},
+				{"u", "v", "w", "x", "y"},
+			},
+			results2: [][]string{
+				{"a", "b", "x", "d", "e"},
+				{"f", "g", "h", "i", "j"},
+				{"k", "z", "m", "n", "o"},
+				{"p", "q", "r", "s", "t"},
+				{"u", "v", "w", "x", "z"},
+			},
+			expectedSame:      false,
+			expectedCondition: Condition_Diff_In_Value,
+			expectedDifference: []DiffPlace{
+				{0, 2, "c", "x"},
+				{2, 1, "l", "z"},
+				{4, 4, "y", "z"},
+			},
+		},
+	}
+
+	// Loop through the test cases
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Call the function to be tested.
+			same, condition, differences := CompareResults(test.results1, test.results2)
+			// Assertions.
+			assert.Equal(t, test.expectedSame, same, fmt.Sprintf("Expected same=%v, but got same=%v", test.expectedSame, same))
+			assert.Equal(t, test.expectedCondition, condition)
+			assert.Equal(t, test.expectedDifference, differences)
+		})
 	}
 }
 
@@ -188,110 +295,91 @@ func Test_Check_MakeSelectTableSQLStr(t *testing.T) {
 
 // Test_Genuine_Integrated_Testing tests the process of automatically generating test databases.
 func Test_Genuine_Integrated_Testing(t *testing.T) {
-	// >>>>> DB Client
-
-	dsn := "root:12345@tcp(127.0.0.1:3306)/mock"
-
-	db, err := sql.Open("mysql", dsn)
-	require.NoError(t, err)
-	defer func() {
-		_ = db.Close()
-	}()
-
-	err = db.Ping()
-	require.NoError(t, err)
-
-	_, _ = db.Exec("DROP TABLE " + "hotel")
-	// require.NoError(t, err)
-
-	// >>>>> Test Data
-
-	type Hotel struct {
-		ID            int
-		Name          string
-		City          string
-		Rating        float64
-		PricePerNight float64
-		Description   string
-		Facilities    string
-		ContactEmail  string
-		Phone         string
-		Website       string
-		CreatedAt     time.Time
+	// Start with general settings.
+	basicOpts := BasicOptions{
+		UseDB: true,
 	}
 
-	hotel := []Hotel{
-		{1, "Luxury Resort", "Miami", 4.500, 250.000, "A luxurious beachside resort", "Pool, Spa, Private Beach", "info@luxuryresort.com", "+1-123-456-7890", "https://www.luxuryresort.com", time.Date(2025, 3, 14, 9, 23, 45, 0, time.UTC)},
-		{2, "Cozy Inn", "New York", 3.800, 120.000, "A charming inn in the heart of the city", "Free Wi-Fi, Breakfast, Lounge", "info@cozyinn.com", "+1-987-654-3210", "https://www.cozyinn.com", time.Date(1984, 7, 9, 9, 12, 32, 0, time.UTC)},
-		{3, "Seaside Lodge", "Los Angeles", 4.200, 180.000, "A cozy lodge with ocean views", "Ocean View, Fireplace, Restaurant", "info@seasidelodge.com", "+1-555-123-4567", "https://www.seasidelodge.com", time.Date(2012, 2, 27, 9, 56, 8, 0, time.UTC)},
-		{4, "Mountain Retreat", "Denver", 4.000, 150.000, "A retreat in the mountains", "Hiking Trails, Spa, Scenic Views", "info@mountainretreat.com", "+1-888-567-8901", "https://www.mountainretreat.com", time.Date(2001, 11, 2, 9, 34, 17, 0, time.UTC)},
-		{5, "Urban Hotel", "Chicago", 3.700, 200.000, "A modern hotel in the city center", "Fitness Center, Rooftop Bar", "info@urbanhotel.com", "+1-333-456-7890", "https://www.urbanhotel.com", time.Date(1993, 10, 15, 10, 42, 19, 0, time.UTC)},
-		{6, "Sunny Getaway", "Miami", 4.600, 280.000, "A sunny paradise by the beach", "Beachfront, Poolside Bar", "info@sunnygetaway.com", "+1-555-789-1234", "https://www.sunnygetaway.com", time.Date(2017, 5, 2, 10, 18, 41, 0, time.UTC)},
-		{7, "Downtown Suites", "New York", 4.300, 180.000, "Luxury suites in the heart of the city", "Spa, Concierge, Sky Lounge", "info@downtownsuites.com", "+1-999-888-7777", "https://www.downtownsuites.com", time.Date(2029, 12, 31, 10, 3, 52, 0, time.UTC)},
-		{8, "Beachfront Resort", "Los Angeles", 4.800, 320.000, "A beachfront oasis with stunning views", "Private Beach, Oceanfront Dining", "info@beachfrontresort.com", "+1-444-555-6666", "https://www.beachfrontresort.com", time.Date(2015, 9, 4, 10, 24, 37, 0, time.UTC)},
-		{9, "Mountain Chalet", "Denver", 4.400, 210.000, "Charming chalets nestled in the mountains", "Ski Access, Fireplace, Spa", "info@mountainchalet.com", "+1-222-333-4444", "https://www.mountainchalet.com", time.Date(1990, 1, 23, 11, 55, 13, 0, time.UTC)},
-		{10, "City Center Hotel", "Chicago", 3.900, 190.000, "Conveniently located hotel in the city center", "Business Center, On-site Restaurant", "info@citycenterhotel.com", "+1-777-888-9999", "https://www.citycenterhotel.com", time.Date(1991, 6, 30, 11, 11, 22, 0, time.UTC)},
-		{11, "Lakeview Lodge", "Seattle", 4.700, 260.000, "Lakeside retreat with stunning lake views", "Boating, Fishing, Lakeside Dining", "info@lakeviewlodge.com", "+1-111-222-3333", "https://www.lakeviewlodge.com", time.Date(1980, 4, 8, 11, 9, 45, 0, time.UTC)},
-		{12, "Riverside Inn", "San Francisco", 4.100, 170.000, "Charming inn along the riverside", "Scenic Views, Garden Patio", "info@riversideinn.com", "+1-444-333-2222", "https://www.riversideinn.com", time.Date(2022, 1, 1, 11, 59, 57, 0, time.UTC)},
-		{13, "Historic Mansion", "Boston", 4.500, 300.000, "Elegant mansion with a rich history", "Antique Furnishings, Ballroom", "info@historicmansion.com", "+1-555-666-7777", "https://www.historicmansion.com", time.Date(2000, 8, 13, 12, 15, 0, 0, time.UTC)},
-		{14, "Desert Oasis", "Phoenix", 3.600, 140.000, "A tranquil oasis in the desert", "Spa, Desert Gardens, Pool", "info@desertoasis.com", "+1-777-888-9999", "https://www.desertoasis.com", time.Date(2021, 11, 11, 12, 38, 2, 0, time.UTC)},
-		{15, "Skyline Tower", "Las Vegas", 4.400, 240.000, "Modern tower with breathtaking city views", "Rooftop Pool, Casino, Nightclub", "info@skylinetower.com", "+1-111-222-3333", "https://www.skylinetower.com", time.Date(1996, 12, 31, 12, 17, 36, 0, time.UTC)},
+	mockOpts := MockOptions{}
+
+	dbOpts := DBOptions{
+		DS: DataSource{
+			Driver:   "mysql",
+			User:     "root",
+			Password: "12345",
+			Protocal: "tcp",
+			IP:       "127.0.0.1",
+			Port:     "3306",
+			DbName:   "mock",
+		},
+		OP: Operate{
+			DropTable:     true,
+			TruncateTable: false,
+		},
 	}
 
-	// >>>>> Create Table
+	mocker, err := NewMocker(
+		NewMockerOptions(
+			WithBasicOptions(basicOpts),
+			WithMockOptions(mockOpts),
+			WithDBOptions(dbOpts),
+		))
 
-	// expectedCreateSQL := "CREATE TABLE IF NOT EXISTS hotel (id INT, name VARCHAR(255), city VARCHAR(255), rating DECIMAL(10, 2), price_per_night DECIMAL(10, 2), created_at TIMESTAMP, description VARCHAR(255), facilities VARCHAR(255), contact_email VARCHAR(255), phone VARCHAR(255), website VARCHAR(255));"
+	defer mocker.Close()
 
-	sqlCreateStr, err := MakeCreateTableSQLStr("hotel", hotel, Case_Snake)
 	require.NoError(t, err)
-	// require.Equal(t, expectedCreateSQL, sqlCreateStr)
+	require.Equal(t, "root:12345@tcp(127.0.0.1:3306)/mock", mocker.DSN())
 
-	_, err = db.Exec(sqlCreateStr)
+	// Clear specified data in the mock database.
+	err = mocker.DropTable("mock", []string{"hotel"}...)
 	require.NoError(t, err)
 
-	// >>>>> Insert Data
+	// Generate CREATE TABLE SQL.
+	sqlCreateStr, err := MakeCreateTableSQLStr("hotel", testdata.HotelExample, Case_Snake)
+	require.NoError(t, err)
+	expectedCreateSQL := "CREATE TABLE IF NOT EXISTS hotel (id INT, name VARCHAR(255), city VARCHAR(255), rating DECIMAL(10, 2), price_per_night DECIMAL(10, 2), description VARCHAR(255), facilities VARCHAR(255), contact_email VARCHAR(255), phone VARCHAR(255), website VARCHAR(255), created_at TIMESTAMP);"
+	assert.Equal(t, expectedCreateSQL, sqlCreateStr)
+	// Execute CREATE TABLE SQL.
+	_, err = mocker.Exec(sqlCreateStr)
+	require.NoError(t, err)
 
-	sqlInsertStr := MakeInsertTableSQLStr("hotel", hotel, Case_Snake)
+	// Generate INSERT SQL.
 	var res sql.Result
-	res, err = db.Exec(sqlInsertStr)
-	require.NoError(t, err)
 	var affected int64
-	affected, _ = res.RowsAffected()
-	require.Equal(t, int64(15), affected)
+	sqlInsertStr := MakeInsertTableSQLStr("hotel", testdata.HotelExample, Case_Snake)
+	// Execute INSERT SQL.
+	res, err = mocker.Exec(sqlInsertStr)
+	affected, err = res.RowsAffected()
+	require.NoError(t, err)
+	assert.Equal(t, int64(15), affected)
 
-	// >>>>> Select Data
-
-	sqlSelectStr := MakeSelectTableSQLStr("hotel", hotel, Case_Snake)
+	// Generate SELECT SQL.
+	sqlSelectStr := MakeSelectTableSQLStr("hotel", testdata.HotelExample, Case_Snake)
+	expectedSelectSQL := "SELECT id, name, city, rating, price_per_night, description, facilities, contact_email, phone, website, created_at FROM hotel;"
+	assert.Equal(t, expectedSelectSQL, sqlSelectStr)
+	// Execute SELECT SQL.
 	var rows *sql.Rows
-	rows, err = db.Query(sqlSelectStr)
-
-	// Get column names
-	columns, err := rows.Columns()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create a slice of interface{} for storing column values
-	values := make([]interface{}, len(columns))
-	for i := range values {
-		var val sql.RawBytes
-		values[i] = &val
-	}
-
-	var results [][]string
-
-	for rows.Next() {
-		err = rows.Scan(values...)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		rowValues := make([]string, len(values))
-		for i, val := range values {
-			rowValues[i] = string(*val.(*sql.RawBytes))
-		}
-		results = append(results, rowValues)
-	}
-
+	rows, err = mocker.Query(sqlSelectStr)
 	require.NoError(t, rows.Err())
+
+	// Record the current data in the database.
+	var data, copyArray [][]string
+	data, err = FetchResultsFromRows(rows)
+	assert.Equal(t, "4.20", data[2][3])
+
+	// Assume the database is modified, then record the current data again.
+	copyArray = make([][]string, len(data))
+	for i := range data {
+		copyArray[i] = make([]string, len(data[i]))
+		copy(copyArray[i], data[i])
+	}
+	// Only one piece of data is different.
+	copyArray[2][3] = "X"
+
+	// Find where the database has been modified.
+	same, condition, differences := CompareResults(data, copyArray)
+	// Assertions
+	assert.Equal(t, false, same)
+	assert.Equal(t, Condition_Diff_In_Value, condition)
+	assert.Equal(t, []DiffPlace{{RowIndex: 2, ColumnIndex: 3, BeforeValue: "4.20", AfterValue: "X"}}, differences)
 }
