@@ -8,8 +8,13 @@ import (
 
 // Mocker represents a struct for managing database or mocking.
 type Mocker struct {
-	db     *sql.DB       // Pointer to the active database connection.
-	dsn    string        // Data Source Name (DSN) for the database connection.
+	// for mock and genuine
+	db *sql.DB // Pointer to the active database connection.
+	// for mock
+	sqlMock Sqlmock
+	// for genuine
+	dsn string // Data Source Name (DSN) for the database connection.
+	// for config
 	config MockerOptions // Configuration options for the mocker.
 }
 
@@ -19,18 +24,37 @@ func NewMocker(mOpts MockerOptions) (mocker *Mocker, err error) {
 		config: mOpts,
 	}
 
-	// Construct the Data Source Name (DSN) for the database connection.
-	ds := mocker.config.DB.DS
-	mocker.dsn = ds.User + ":" + ds.Password +
-		"@" + ds.Protocal +
-		"(" + ds.IP + ":" + ds.Port + ")/" +
-		ds.DbName
+	if mOpts.Basic.UseDB {
+		// for genuine situation
 
-	// Open a database connection using the specified driver and DSN.
-	mocker.db, err = sql.Open(mocker.config.DB.DS.Driver, mocker.dsn)
-	if err != nil {
-		return
+		// Construct the Data Source Name (DSN) for the database connection.
+		ds := mocker.config.DB.DS
+		mocker.dsn = ds.User + ":" + ds.Password +
+			"@" + ds.Protocal +
+			"(" + ds.IP + ":" + ds.Port + ")/" +
+			ds.DbName
+
+		// Open a database connection using the specified driver and DSN.
+		mocker.db, err = sql.Open(mocker.config.DB.DS.Driver, mocker.dsn)
+		if err != nil {
+			return
+		}
+	} else {
+		// Create a new SQL mock for testing.
+		mocker.db, mocker.sqlMock, err = New()
+
+		// Prepare SQL mock data
+		SetMockLocationByManual(mOpts.Mock.ConfigFolder) // Set the mock configuration location manually.
+		for i := 0; i < len(mOpts.Mock.ConfigFile); i++ {
+			err = LoadMockConfig(mocker.sqlMock, mOpts.Mock.ConfigFile[i]) // Load the mock configuration for testing.
+			if err != nil {
+				return
+			}
+		}
+
 	}
+
+	// for mock situation
 
 	return
 }
@@ -43,15 +67,15 @@ func (m *Mocker) DSN() string {
 // Query executes a SQL query and returns the resulting rows.
 //
 //go:inline
-func (m *Mocker) Query(sqlStr string) (*sql.Rows, error) {
-	return m.db.Query(sqlStr)
+func (m *Mocker) Query(query string, args ...any) (*sql.Rows, error) {
+	return m.db.Query(query, args...)
 }
 
 // Exec executes SQL statements.
 //
 //go:inline
-func (m *Mocker) Exec(sqlStr string) (sql.Result, error) {
-	return m.db.Exec(sqlStr)
+func (m *Mocker) Exec(query string, args ...any) (sql.Result, error) {
+	return m.db.Exec(query, args...)
 }
 
 // Close closes the database connection.
@@ -59,18 +83,22 @@ func (m *Mocker) Close() {
 	if m.db != nil {
 		_ = m.db.Close()
 	}
+	m = nil
 }
 
 // DropTable drops specified tables in the given database.
 func (m *Mocker) DropTable(db string, tables ...string) (err error) {
-	// Join the table names and formulate the SQL query.
-	all := strings.Join(tables, ", ")
-	query := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s;", db, all)
+	// When using mock, refrain from performing table deletion actions.
+	if m.config.Basic.UseDB {
+		// Join the table names and formulate the SQL query.
+		all := strings.Join(tables, ", ")
+		query := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s;", db, all)
 
-	// Execute the DROP TABLE query.
-	_, err = m.db.Exec(query)
-	if err != nil {
-		return
+		// Execute the DROP TABLE query.
+		_, err = m.db.Exec(query)
+		if err != nil {
+			return
+		}
 	}
 
 	return

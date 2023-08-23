@@ -92,25 +92,28 @@ type BasicOptions struct {
 
 // MockOptions holds options related to mocking.
 type MockOptions struct {
-	// Placeholder for any specific mocking configuration options.
+	ConfigFolder string
+	ConfigFile   []string
 }
 
 // DBOptions holds database configuration options.
 type DBOptions struct {
-	DS DataSource
-	OP Operate
+	DS DataSource // DataSource configuration for the database.
+	OP Operate    // Operate options for database operations.
 }
 
+// DataSource holds information for establishing a database connection.
 type DataSource struct {
-	Driver   string
-	User     string
-	Password string
-	Protocal string
-	IP       string
-	Port     string
-	DbName   string
+	Driver   string // Driver specifies the database driver to be used (e.g., mysql, postgres).
+	User     string // User represents the database username.
+	Password string // Password represents the password associated with the database user.
+	Protocal string // Protocal specifies the communication protocol (e.g., tcp).
+	IP       string // IP is the IP address of the database server.
+	Port     string // Port is the port number for the database connection.
+	DbName   string // DbName is the name of the target database.
 }
 
+// Operate holds options for performing specific database operations.
 type Operate struct {
 	DropTable     bool // DropTable indicates whether to drop the whole table.
 	TruncateTable bool // TruncateTable indicates whether to truncate database tables.

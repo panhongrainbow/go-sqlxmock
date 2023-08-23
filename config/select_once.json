@@ -1,5 +1,5 @@
-{
-  "mock1": {
+[
+  {
     "qureyString": "SELECT id, name, city, rating, price_per_night FROM hotels WHERE city = '?' AND rating >= ?;",
     "queryArgs": ["New York", 4],
     "returnRows": [
@@ -12,4 +12,4 @@
       }
     ]
   }
-}
+]

@@ -21,7 +21,7 @@ func Test_Check_ConvertStringFormats(t *testing.T) {
 	}{
 		{"convertThisString", Case_Upper, "CONVERTTHISSTRING"},
 		{"convertThisString", Case_Lower, "convertthisstring"},
-		{"convertThisString", Case_Snake, "convert_This_String"},
+		{"convertThisString", Case_Snake, "convert_this_string"},
 	}
 
 	// Iterate through the test cases and perform the conversion, then compare with expected output.
@@ -292,6 +292,114 @@ func Test_Check_CompareResults(t *testing.T) {
 }
 
 // >>>>> >>>>> >>>>> Integrated Testing
+
+// Test_Check_Integrated_Testing tests the integrated process with specific settings.
+func Test_Check_Integrated_Testing(t *testing.T) {
+	t.Run("Query Once", func(t *testing.T) {
+		// Define basic options for the test.
+		basicOpts := BasicOptions{
+			UseDB: false,
+		}
+
+		// Define options for mocking.
+		mockOpts := MockOptions{
+			ConfigFolder: "./config",
+			ConfigFile:   []string{"select_once.json"},
+		}
+
+		// Define database options.
+		dbOpts := DBOptions{}
+
+		// Create a new mocker instance using specified options.
+		mocker, err := NewMocker(
+			NewMockerOptions(
+				WithBasicOptions(basicOpts),
+				WithMockOptions(mockOpts),
+				WithDBOptions(dbOpts),
+			))
+		require.NoError(t, err)
+
+		// Make sure the mocker is closed at the end of the test.
+		defer mocker.Close()
+
+		// SQL query to be executed.
+		selectSql := "SELECT id, name, city, rating, price_per_night FROM hotels WHERE city = '?' AND rating >= ?;"
+
+		// Execute the query using the mocker.
+		rows, err := mocker.Query(selectSql, "New York", 4)
+		require.NoError(t, err)
+
+		// Record the current data in the database.
+		var data [][]string
+		data, err = FetchResultsFromRows(rows)
+		require.NoError(t, err)
+
+		// Compare the fetched data with the expected data.
+		require.Equal(t, [][]string{
+			{"1", "Grand Hotel", "New York", "4.5", "150"},
+			{"2", "Luxury Inn", "New York", "4.2", "120"},
+		}, data)
+	})
+	t.Run("Query Twice", func(t *testing.T) {
+		// Define basic options for the test.
+		basicOpts := BasicOptions{
+			UseDB: false,
+		}
+
+		// Define options for mocking.
+		mockOpts := MockOptions{
+			ConfigFolder: "./config",
+			ConfigFile:   []string{"select_twice.json"},
+		}
+
+		// Define database options.
+		dbOpts := DBOptions{}
+
+		// Create a new mocker instance using specified options.
+		mocker, err := NewMocker(
+			NewMockerOptions(
+				WithBasicOptions(basicOpts),
+				WithMockOptions(mockOpts),
+				WithDBOptions(dbOpts),
+			))
+		require.NoError(t, err)
+
+		// Make sure the mocker is closed at the end of the test.
+		defer mocker.Close()
+
+		// SQL query to be executed.
+		selectSql := "SELECT id, name, city, rating, price_per_night FROM hotels WHERE city = '?' AND rating >= ?;"
+
+		// Execute the query using the mocker for the first city.
+		rows, err := mocker.Query(selectSql, "New York", 4)
+		require.NoError(t, err)
+
+		// Record the current data in the database.
+		var data [][]string
+		data, err = FetchResultsFromRows(rows)
+		require.NoError(t, err)
+
+		// Compare the fetched data with the expected data.
+		require.Equal(t, [][]string{
+			{"1", "Grand Hotel", "New York", "4.5", "150"},
+			{"2", "Luxury Inn", "New York", "4.2", "120"},
+		}, data)
+
+		// Execute the query using the mocker for the second city.
+		rows, err = mocker.Query(selectSql, "Beijing", 4)
+		require.NoError(t, err)
+
+		// Record the current data in the database.
+		data, err = FetchResultsFromRows(rows)
+		require.NoError(t, err)
+
+		// Compare the fetched data with the expected data.
+		require.Equal(t, [][]string{
+			{"3", "Grand Hotel", "Beijing", "4.5", "150"},
+			{"4", "Luxury Inn", "Beijing", "4.2", "120"},
+		}, data)
+	})
+}
 
 // Test_Genuine_Integrated_Testing tests the process of automatically generating test databases.
 func Test_Genuine_Integrated_Testing(t *testing.T) {

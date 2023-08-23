@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// >>>>> >>>>> >>>>> >>>>> >>>>> Specify the location of the mock folder first
+// >>>>> >>>>> >>>>> >>>>> >>>>> Specify the location of the mock folder first.
 
 var mockConfigLocation string
 
@@ -34,7 +34,7 @@ func GetMockLocation() (path string) {
 	return mockConfigLocation
 }
 
-// >>>>> >>>>> >>>>> >>>>> Set the storage format for the mock
+// >>>>> >>>>> >>>>> >>>>> Set the storage format for the mock.
 
 // ConfigSet can be used to set the basic response
 type ConfigSet struct {
@@ -43,13 +43,13 @@ type ConfigSet struct {
 	ReturnRows  []ConfigRows   `json:"returnRows"`
 }
 
-// ConfigRows can be used to set the corresponding database schema
+// ConfigRows can be used to set the corresponding database schema.
 type ConfigRows struct {
 	Columns []string         `json:"columns"`
 	Rows    [][]driver.Value `json:"rows"`
 }
 
-// >>>>> >>>>> >>>>> >>>>> Start using the function to load mock configurations
+// >>>>> >>>>> >>>>> >>>>> Start using the function to load mock configurations.
 
 // LoadMockConfig is used to load the configuration values for Mock.
 // It contains JSON data and requires UseNumber to preserve numbers as strings.
@@ -59,7 +59,7 @@ func LoadMockConfig(sqlMock Sqlmock, jsonFile string) (error error) {
 	// Join the directory and the JSON file name to get the full file path
 	mockFile := filepath.Join(mockConfigLocation, jsonFile)
 
-	// Read the JSON data from the configuration file
+	// Read the JSON data from the configuration file.
 	data, err := os.ReadFile(mockFile)
 	if err != nil {
 		return
@@ -72,13 +72,13 @@ func LoadMockConfig(sqlMock Sqlmock, jsonFile string) (error error) {
 	decoder.UseNumber()
 
 	// Using json.NewDecoder instead of json.Unmarshal.
-	var mockData map[string]ConfigSet
+	var mockData []ConfigSet
 	err = decoder.Decode(&mockData)
 	if err != nil {
 		return
 	}
 
-	// Iterate through the mock data and print the values
+	// Iterate through the mock data and print the values.
 	for _, mock := range mockData {
 		for _, returnRows := range mock.ReturnRows {
 			response := NewRows(returnRows.Columns)
@@ -86,16 +86,17 @@ func LoadMockConfig(sqlMock Sqlmock, jsonFile string) (error error) {
 				response = response.AddRow(convertNumbers(row)...)
 			}
 			sqlMock.ExpectQuery(
-				regexp.QuoteMeta(mock.QueryString), //
+				// Using QuoteMeta simplifies the configuration file and makes the setup more convenient.
+				regexp.QuoteMeta(mock.QueryString),
 			).WithArgs(convertNumbers(mock.QueryArgs)...).WillReturnRows(response)
 		}
 	}
 
-	// If no errors occur, it returns
+	// If no errors occur, it returns.
 	return
 }
 
-// >>>>> >>>>> >>>>> >>>>> Using a helper function to assist the LoadMockConfig function
+// >>>>> >>>>> >>>>> >>>>> Using a helper function to assist the LoadMockConfig function.
 
 // convertNumbers is used to convert data in json.Number format to integers or decimals,
 // as json.NewDecoder returns data in json.Number format.
