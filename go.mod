@@ -1,4 +1,4 @@
-module github.com/zhashkevych/go-sqlxmock
+module github.com/panhongrainbow/go-sqlxmock
 
 go 1.21
 

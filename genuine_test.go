@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/panhongrainbow/go-sqlxmock/testdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zhashkevych/go-sqlxmock/testdata"
 	"testing"
 	"time"
 )
@@ -186,14 +186,14 @@ func Test_Check_MakeSelectTableSQLStr(t *testing.T) {
 // Test_Check_FetchResultsFromRows validates FetchResultsFromRows function with mock database results and assertions for correctness.
 func Test_Check_FetchResultsFromRows(t *testing.T) {
 	// Create a mock database connection and obtain a mock database handle
-	db, mock, err := New()
+	db, sqlMock, err := New()
 	assert.NoError(t, err, "Failed to create mock database connection")
 	defer db.Close()
 
 	// Define the columns and rows you want to use for testing
 	columns := []string{"col1", "col2"}
-	mock.ExpectQuery("SELECT").WillReturnRows(
-		mock.NewRows(columns).AddRow("value1-1", "value1-2").AddRow("value2-1", "value2-2"),
+	sqlMock.ExpectQuery("SELECT").WillReturnRows(
+		sqlMock.NewRows(columns).AddRow("value1-1", "value1-2").AddRow("value2-1", "value2-2"),
 	)
 
 	// Call the function to be tested
@@ -209,6 +209,55 @@ func Test_Check_FetchResultsFromRows(t *testing.T) {
 
 	// Make sure all expectations were met
 	assert.NoError(t, mock.ExpectationsWereMet(), "Not all expectations were met")
+}
+
+// Benchmark_Performance_FetchResultsFromRows Benchmarks two row-fetching methods with mock data and
+// comparing FetchResultsFromRows function using a comparator.
+func Benchmark_Performance_FetchResultsFromRows(b *testing.B) {
+	// Create a mock database connection and obtain a mock database handle
+	db, sqlMock, err := New()
+	require.NoError(b, err)
+	defer db.Close()
+
+	// Define the columns and rows you want to use for testing
+	columns := []string{"col1", "col2", "col3", "col4", "col5", "col6", "col7", "col8", "col9", "col10"}
+	sqlMock.ExpectQuery("SELECT").WillReturnRows(
+		sqlMock.NewRows(columns).
+			AddRow("value1-1", "value1-2", "value1-3", "value1-4", "value1-5", "value1-6", "value1-7", "value1-8", "value1-9", "value1-10").
+			AddRow("value2-1", "value2-2", "value2-3", "value2-4", "value2-5", "value2-6", "value2-7", "value2-8", "value2-9", "value2-10").
+			AddRow("value3-1", "value3-2", "value3-3", "value3-4", "value3-5", "value3-6", "value3-7", "value3-8", "value3-9", "value3-10").
+			AddRow("value4-1", "value4-2", "value4-3", "value4-4", "value4-5", "value4-6", "value4-7", "value4-8", "value4-9", "value4-10").
+			AddRow("value5-1", "value5-2", "value5-3", "value5-4", "value5-5", "value5-6", "value5-7", "value5-8", "value5-9", "value5-10").
+			AddRow("value6-1", "value6-2", "value6-3", "value6-4", "value6-5", "value6-6", "value6-7", "value6-8", "value6-9", "value6-10").
+			AddRow("value7-1", "value7-2", "value7-3", "value7-4", "value7-5", "value7-6", "value7-7", "value7-8", "value7-9", "value7-10").
+			AddRow("value8-1", "value8-2", "value8-3", "value8-4", "value8-5", "value8-6", "value8-7", "value8-8", "value8-9", "value8-10").
+			AddRow("value9-1", "value9-2", "value9-3", "value9-4", "value9-5", "value9-6", "value9-7", "value9-8", "value9-9", "value9-10").
+			AddRow("value10-1", "value10-2", "value10-3", "value10-4", "value10-5", "value10-6", "value10-7", "value10-8", "value10-9", "value10-10"),
+	)
+
+	// Call the function to be tested
+	rows, err := db.Query("SELECT ...")
+	require.NoError(b, err)
+	defer rows.Close()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	// In fact, the performance is nearly the same. (效能一样)
+
+	b.Run("FetchResultsFromRows Comparator", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = FetchResultsFromRowsComparator(rows)
+		}
+	})
+
+	b.ResetTimer()
+
+	b.Run("FetchResultsFromRows In Use", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = FetchResultsFromRows(rows)
+		}
+	})
 }
 
 // Test_Check_CompareResults validates comparison of results with detailed scenarios, ensuring correctness of differences.

@@ -162,6 +162,38 @@ func mapCreateFieldValue(t reflect.Type, value interface{}) (corrected string) {
 // FetchResultsFromRows fetches results from a SQL rows object and converts them into a 2D string slice.
 func FetchResultsFromRows(rows *sql.Rows) (results [][]string, err error) {
 	// Retrieve the column names from the SQL rows object.
+	columns, err := rows.Columns()
+	if err != nil {
+		return
+	}
+
+	// Prepare a slice to store the values of the current row.
+	values := make([]interface{}, len(columns))
+	rowValues := make([]string, len(columns))
+	for i := range values {
+		values[i] = &rowValues[i]
+	}
+
+	// Loop through each row in the rows object.
+	for rows.Next() {
+		// Scan the current row's values into the values slice.
+		if err = rows.Scan(values...); err != nil {
+			return
+		}
+
+		// Append the rowValues slice to the results slice, forming a 2D string slice.
+		results = append(results, append([]string{}, rowValues...)) // <<<<< <<<<< <<<<< There's no type conversion here. (这里没型态转换)
+		// There probably won't be any use of reflection here, because append is a built-in function.
+		// Considering this, this one is better.
+		// (应不会有 reflect，较好)
+	}
+
+	return
+}
+
+// FetchResultsFromRowsComparator fetches results from a SQL rows object and converts them into a 2D string slice.
+func FetchResultsFromRowsComparator(rows *sql.Rows) (results [][]string, err error) {
+	// Retrieve the column names from the SQL rows object.
 	var columns []string
 	columns, err = rows.Columns()
 	if err != nil {
@@ -185,7 +217,7 @@ func FetchResultsFromRows(rows *sql.Rows) (results [][]string, err error) {
 		// Convert the scanned values to strings and store them in a new rowValues slice.
 		rowValues := make([]string, len(values))
 		for i, val := range values {
-			rowValues[i] = string(*val.(*sql.RawBytes))
+			rowValues[i] = string(*val.(*sql.RawBytes)) // <<<<< <<<<< <<<<< Here's type conversion. (这里有型态转换)
 		}
 
 		// Append the rowValues slice to the results slice, forming a 2D string slice.
