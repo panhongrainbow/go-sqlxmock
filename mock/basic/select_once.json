@@ -1,0 +1,15 @@
+[
+  {
+    "qureyString": "SELECT id, name, city, rating, price_per_night FROM hotels WHERE city = '?' AND rating >= ?;",
+    "queryArgs": ["New York", 4],
+    "returnRows": [
+      {
+        "columns": ["id", "name", "city", "rating", "price_per_night"],
+        "rows": [
+          [1, "Grand Hotel", "New York", 4.5, 150.00],
+          [2, "Luxury Inn", "New York", 4.2, 120.00]
+        ]
+      }
+    ]
+  }
+]

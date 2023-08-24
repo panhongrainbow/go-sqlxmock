@@ -113,3 +113,15 @@ func TestUserRepository_Insert(t *testing.T) {
 	}
 }
 ```
+
+## Develop
+
+You can develop locally using the following commands:
+
+```bash
+$ go work init
+
+$ go work edit -replace=github.com/zhashkevych/go-sqlxmock=/home/panhong/go/src/github.com/panhongrainbow/go-sqlxmock
+```
+
+## Config

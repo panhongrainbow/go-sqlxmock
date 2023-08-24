@@ -1,0 +1,15 @@
+{
+  "ds": {
+    "driver": "mysql",
+    "user": "root",
+    "password": "12345",
+    "protocal": "tcp",
+    "ip": "127.0.0.1",
+    "port": "3306",
+    "db_name": "mock"
+  },
+  "op": {
+    "drop_table": true,
+    "truncate_table": false
+  }
+}
