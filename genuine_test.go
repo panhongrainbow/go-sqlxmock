@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/panhongrainbow/go-sqlxmock/testdata"
+	"github.com/panhongrainbow/go-sqlxmock/genuine/testdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -344,6 +344,9 @@ func Test_Check_CompareResults(t *testing.T) {
 
 // Test_Check_Integrated_Testing tests the integrated process with specific settings.
 func Test_Check_Integrated_Testing(t *testing.T) {
+	// Set primary path (主要路径) ❗️.
+	SetMockLocationByManual("./mock")
+
 	t.Run("Query Once", func(t *testing.T) {
 		// Define basic options for the test.
 		basicOpts := BasicOptions{
@@ -352,8 +355,8 @@ func Test_Check_Integrated_Testing(t *testing.T) {
 
 		// Define options for mocking.
 		mockOpts := MockOptions{
-			ConfigFolder: "./config",
-			ConfigFile:   []string{"select_once.json"},
+			ConfigSubFolder: "/basic", // Set sub path (次要路径) ❗️.
+			ConfigFile:      []string{"select_once.json"},
 		}
 
 		// Define database options.
@@ -397,8 +400,8 @@ func Test_Check_Integrated_Testing(t *testing.T) {
 
 		// Define options for mocking.
 		mockOpts := MockOptions{
-			ConfigFolder: "./config",
-			ConfigFile:   []string{"select_twice.json"},
+			ConfigSubFolder: "/basic", // Set sub path (次要路径) ❗️
+			ConfigFile:      []string{"select_twice.json"},
 		}
 
 		// Define database options.
@@ -451,30 +454,25 @@ func Test_Check_Integrated_Testing(t *testing.T) {
 }
 
 // Test_Genuine_Integrated_Testing tests the process of automatically generating test databases.
+// (Data in the database will be deleted or cleared here, please be cautious ☢️.)
 func Test_Genuine_Integrated_Testing(t *testing.T) {
 	// Start with general settings.
 	basicOpts := BasicOptions{
 		UseDB: true,
 	}
 
+	// Define mock options.
 	mockOpts := MockOptions{}
 
-	dbOpts := DBOptions{
-		DS: DataSource{
-			Driver:   "mysql",
-			User:     "root",
-			Password: "12345",
-			Protocal: "tcp",
-			IP:       "127.0.0.1",
-			Port:     "3306",
-			DbName:   "mock",
-		},
-		OP: Operate{
-			DropTable:     true,
-			TruncateTable: false,
-		},
-	}
+	// Set the location for genuine files manually.
+	SetGenuineLocationByManual("./genuine") // 主路径 ❗️
 
+	// Load the dbOpts variable from the configuration file.
+	var dbOpts DBOptions
+	var err error
+	dbOpts, err = LoadGenuineConfig("/mock_db", "mock_db.json") // 次要路径 ❗️
+
+	// Declare a variable to hold DBOptions.
 	mocker, err := NewMocker(
 		NewMockerOptions(
 			WithBasicOptions(basicOpts),
@@ -487,8 +485,9 @@ func Test_Genuine_Integrated_Testing(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "root:12345@tcp(127.0.0.1:3306)/mock", mocker.DSN())
 
-	// Clear specified data in the mock database.
-	err = mocker.DropTable("mock", []string{"hotel"}...)
+	// Drop specified data in the mock database.
+	// (Data in the database will be deleted or cleared here, please be cautious ☢️.)
+	err = mocker.EraseTable(EraseDropTableAction, "mock", []string{"hotel"}...)
 	require.NoError(t, err)
 
 	// Generate CREATE TABLE SQL.
@@ -539,4 +538,18 @@ func Test_Genuine_Integrated_Testing(t *testing.T) {
 	assert.Equal(t, false, same)
 	assert.Equal(t, Condition_Diff_In_Value, condition)
 	assert.Equal(t, []DiffPlace{{RowIndex: 2, ColumnIndex: 3, BeforeValue: "4.20", AfterValue: "X"}}, differences)
+
+	// Truncate specified data in the mock database.
+	// (Data in the database will be deleted or cleared here, please be cautious ☢️.)
+	err = mocker.EraseTable(EraseTruncateTableAction, "mock", []string{"hotel"}...)
+	require.NoError(t, err)
+
+	// Query database records again after clearing.
+	rows, err = mocker.Query(sqlSelectStr)
+	require.NoError(t, rows.Err())
+
+	// The entire query result should be empty.
+	data, err = FetchResultsFromRows(rows)
+	require.NoError(t, rows.Err())
+	assert.Equal(t, [][]string(nil), data)
 }

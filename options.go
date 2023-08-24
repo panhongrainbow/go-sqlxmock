@@ -92,29 +92,31 @@ type BasicOptions struct {
 
 // MockOptions holds options related to mocking.
 type MockOptions struct {
-	ConfigFolder string
-	ConfigFile   []string
+	ConfigSubFolder string // Setting up sub-paths (设定子路径) ❗️
+	ConfigFile      []string
 }
 
 // DBOptions holds database configuration options.
 type DBOptions struct {
-	DS DataSource // DataSource configuration for the database.
-	OP Operate    // Operate options for database operations.
+	ConfigSubFolder string // Setting up sub-paths (设定子路径) ❗️
+	ConfigFile      []string
+	DS              DataSource `json:"ds"` // DataSource configuration for the database.
+	OP              Operate    `json:"op"` // Operate options for database operations.
 }
 
 // DataSource holds information for establishing a database connection.
 type DataSource struct {
-	Driver   string // Driver specifies the database driver to be used (e.g., mysql, postgres).
-	User     string // User represents the database username.
-	Password string // Password represents the password associated with the database user.
-	Protocal string // Protocal specifies the communication protocol (e.g., tcp).
-	IP       string // IP is the IP address of the database server.
-	Port     string // Port is the port number for the database connection.
-	DbName   string // DbName is the name of the target database.
+	Driver   string `json:"driver"`   // Driver specifies the database driver to be used (e.g., mysql, postgres).
+	User     string `json:"user"`     // User represents the database username.
+	Password string `json:"password"` // Password represents the password associated with the database user.
+	Protocal string `json:"protocal"` // Protocal specifies the communication protocol (e.g., tcp).
+	IP       string `json:"ip"`       // IP is the IP address of the database server.
+	Port     string `json:"port"`     // Port is the port number for the database connection.
+	DbName   string `json:"db_name"`  // DbName is the name of the target database.
 }
 
 // Operate holds options for performing specific database operations.
 type Operate struct {
-	DropTable     bool // DropTable indicates whether to drop the whole table.
-	TruncateTable bool // TruncateTable indicates whether to truncate database tables.
+	DropTable     bool `json:"drop_table"`     // DropTable indicates whether to drop the whole table.
+	TruncateTable bool `json:"truncate_table"` // TruncateTable indicates whether to truncate database tables.
 }

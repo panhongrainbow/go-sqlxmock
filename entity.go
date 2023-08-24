@@ -43,10 +43,9 @@ func NewMocker(mOpts MockerOptions) (mocker *Mocker, err error) {
 		// Create a new SQL mock for testing.
 		mocker.db, mocker.sqlMock, err = New()
 
-		// Prepare SQL mock data
-		SetMockLocationByManual(mOpts.Mock.ConfigFolder) // Set the mock configuration location manually.
+		// Prepare SQL mock data.
 		for i := 0; i < len(mOpts.Mock.ConfigFile); i++ {
-			err = LoadMockConfig(mocker.sqlMock, mOpts.Mock.ConfigFile[i]) // Load the mock configuration for testing.
+			err = LoadMockConfig(mocker.sqlMock, mOpts.Mock.ConfigSubFolder, mOpts.Mock.ConfigFile[i]) // Load the mock configuration for testing.
 			if err != nil {
 				return
 			}
@@ -55,7 +54,6 @@ func NewMocker(mOpts MockerOptions) (mocker *Mocker, err error) {
 	}
 
 	// for mock situation
-
 	return
 }
 
@@ -86,13 +84,22 @@ func (m *Mocker) Close() {
 	m = nil
 }
 
-// DropTable drops specified tables in the given database.
-func (m *Mocker) DropTable(db string, tables ...string) (err error) {
+// 定义一个 Erace Action 避免混用
+type EraseTableAction string
+
+const (
+	EraseDropTableAction     EraseTableAction = "DROP TABLE IF EXISTS "
+	EraseTruncateTableAction EraseTableAction = "TRUNCATE TABLE "
+)
+
+// EraseTable drops specified tables in the given database.
+// (Data in the database will be deleted or cleared here, please be cautious ☢️.)
+func (m *Mocker) EraseTable(action EraseTableAction, db string, tables ...string) (err error) {
 	// When using mock, refrain from performing table deletion actions.
 	if m.config.Basic.UseDB {
 		// Join the table names and formulate the SQL query.
 		all := strings.Join(tables, ", ")
-		query := fmt.Sprintf("DROP TABLE IF EXISTS %s.%s;", db, all)
+		query := fmt.Sprintf(string(action)+"%s.%s;", db, all)
 
 		// Execute the DROP TABLE query.
 		_, err = m.db.Exec(query)

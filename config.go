@@ -10,15 +10,33 @@ import (
 	"strings"
 )
 
-// >>>>> >>>>> >>>>> >>>>> >>>>> Specify the location of the mock folder first.
+// config.go is primarily used to set the main path ❗️.
+// (设定主路径)
 
-var mockConfigLocation string
+// The configuration of other sub-paths is located in the options.go file within the entity package❗️.
+// (其他子路径的设定在 entity 的 options.go)
 
-// SetMockLocationByTriggerMain sets mockConfigLocation and gets the directory path of the caller's location.
-func SetMockLocationByTriggerMain() {
-	if mockConfigLocation == "" {
-		_, file, _, _ := runtime.Caller(1)
-		mockConfigLocation = filepath.Dir(file)
+// >>>>> >>>>> >>>>> >>>>> >>>>> Specify the location of the mock or genuine folder first.
+
+// The mocker can accept both genuine (real) and mock (fake) databases for testing.
+// Below are the respective configuration paths for each.
+
+var mockConfigLocation string    // fake database 假的资料库
+var genuineConfigLocation string // real database 真实资料库
+
+// SetMockOrGenuineLocationByTriggerMain sets mockConfigLocation and gets the directory path of the caller's location.
+// When passed as false, the file path design is based on the mock simulated database (mockConfigLocation).
+// When passed as true, the file path design is based on the genuine real database (genuineConfigLocation).
+func SetMockOrGenuineLocationByTriggerMain(isGenuine bool) {
+	_, file, _, _ := runtime.Caller(1)
+	if isGenuine {
+		if genuineConfigLocation == "" {
+			genuineConfigLocation = filepath.Dir(file)
+		}
+	} else {
+		if mockConfigLocation == "" {
+			mockConfigLocation = filepath.Dir(file)
+		}
 	}
 	return
 }
@@ -32,6 +50,17 @@ func SetMockLocationByManual(path string) {
 // GetMockLocation returns mockConfigLocation.
 func GetMockLocation() (path string) {
 	return mockConfigLocation
+}
+
+// SetGenuineLocationByManual sets genuineConfigLocation by manual.
+func SetGenuineLocationByManual(path string) {
+	genuineConfigLocation = path
+	return
+}
+
+// GetGenuineLocation returns genuineConfigLocation.
+func GetGenuineLocation() (path string) {
+	return genuineConfigLocation
 }
 
 // >>>>> >>>>> >>>>> >>>>> Set the storage format for the mock.
@@ -49,15 +78,15 @@ type ConfigRows struct {
 	Rows    [][]driver.Value `json:"rows"`
 }
 
-// >>>>> >>>>> >>>>> >>>>> Start using the function to load mock configurations.
+// >>>>> >>>>> >>>>> >>>>> Start using the function to load mock or genuine configurations.
 
 // LoadMockConfig is used to load the configuration values for Mock.
 // It contains JSON data and requires UseNumber to preserve numbers as strings.
 // If there are specific performance requirements, you may need to write your own parser.
 // For now, we'll use the simplest method using json.NewDecoder to handle it.
-func LoadMockConfig(sqlMock Sqlmock, jsonFile string) (error error) {
+func LoadMockConfig(sqlMock Sqlmock, subPath, jsonFile string) (error error) {
 	// Join the directory and the JSON file name to get the full file path
-	mockFile := filepath.Join(mockConfigLocation, jsonFile)
+	mockFile := filepath.Join(mockConfigLocation, subPath, jsonFile)
 
 	// Read the JSON data from the configuration file.
 	data, err := os.ReadFile(mockFile)
@@ -93,6 +122,25 @@ func LoadMockConfig(sqlMock Sqlmock, jsonFile string) (error error) {
 	}
 
 	// If no errors occur, it returns.
+	return
+}
+
+func LoadGenuineConfig(subPath, jsonFile string) (dbOpts DBOptions, err error) {
+	// Construct the file path for the genuine database configuration.
+	mockFile := filepath.Join(genuineConfigLocation, subPath, jsonFile)
+
+	// Read the contents of the mock database configuration file.
+	rawData, err := os.ReadFile(mockFile)
+	if err != nil {
+		return
+	}
+
+	// Unmarshal the json raw data into the dbOpts variable.
+	err = json.Unmarshal(rawData, &dbOpts)
+	if err != nil {
+		return
+	}
+
 	return
 }
 

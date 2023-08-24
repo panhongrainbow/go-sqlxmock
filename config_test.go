@@ -19,8 +19,8 @@ func Test_Check_Config_Select(t *testing.T) {
 	sqlDB, sqlMock, err := New()
 
 	// Prepare SQL mock data
-	SetMockLocationByManual("./config")               // Set the mock configuration location manually.
-	err = LoadMockConfig(sqlMock, "select_once.json") // Load the mock configuration for testing.
+	SetMockLocationByManual("./mock")                           // Set the mock configuration location manually.
+	err = LoadMockConfig(sqlMock, "/basic", "select_once.json") // Load the mock configuration for testing.
 	require.NoError(t, err)
 
 	// Create a new SQLx DB instance.
